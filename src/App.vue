@@ -1,29 +1,33 @@
 <template>
   <v-app>
     <v-main>
-      <v-row v-if="!isLanding">
-        <div style="width: 15vw">
-          <Navbar></Navbar>
-        </div>
-        <div class="pa-10 mb-16" style="width: 85vw">
-          <router-view />
+      <div v-if="!isLanding">
+        <Navbar></Navbar>
+        <div class="pa-10 my-16">
+          <div class="main">
+            <router-view />
+            <div class="card" v-if="showCard">
+              <Card></Card>
+            </div>
+          </div>
           <Footer></Footer>
         </div>
-      </v-row>
+      </div>
       <Landing v-else></Landing>
     </v-main>
   </v-app>
 </template>
 
 <script>
-import Navbar from "@/components/Navbar";
+import { getAuth } from "firebase/auth";
 import axios from "axios";
-import store from "@/store/index.js";
+
+import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Landing from "./views/Landing.vue";
+import Card from "./views/Card.vue";
 
 axios.defaults.baseURL = "http://localhost:8000/";
-
 
 export default {
   name: "App",
@@ -31,11 +35,30 @@ export default {
   components: {
     Navbar,
     Footer,
-    Landing
+    Landing,
+    Card
   },
   computed: {
     isLanding() {
       return this.$route.name === "Landing";
+    },
+    showCard() {
+      return ["Home", "Bet"].indexOf(this.$route.name) > -1;
+    }
+  },
+  async mounted() {
+    const auth = getAuth();
+    if (auth && auth.currentUser) {
+      const token = await auth.currentUser.getIdToken();
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      };
+      console.log("------- CONFIG WITH USER TOKEN -------\n", config);
+      // Backend Token Authorization
+      // https://youtu.be/4Rv6KSIsiMo
+      // this.$axios.get("urlADeterminer",)
     }
   }
 };
@@ -46,6 +69,19 @@ export default {
 @import url("https://fonts.googleapis.com/css2?family=Varela+Round&display=swap");
 
 // Utils --------------------------------------------------------------
+html {
+  box-sizing: border-box;
+  font-size: 62.5%;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+  margin: 0;
+  padding: 0;
+}
+
 .vh-100 {
   height: 100vh;
 }
@@ -93,6 +129,9 @@ $body-font: "Roboto";
   font-weight: normal;
   font-size: 3rem;
 }
+.main {
+  display: flex;
+}
 
 .font-body {
   font-family: $title-font !important;
@@ -104,5 +143,12 @@ $body-font: "Roboto";
 //Important for page with no need scroll --------------------------------
 html {
   overflow-y: auto !important;
+}
+
+// Desktop > 1024
+@media screen and (min-width: 1024px) {
+  .card {
+    min-width: 350px;
+  }
 }
 </style>
